@@ -1,0 +1,9 @@
+[versions]
+kotlin = "2.2.21"
+ktlint = "13.1.0"
+junit5 = "5.11.3"
+
+[libraries]
+jetbrains-kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+junit5 = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit5" }
+ktlint-gradle-plugin = { module = "org.jlleitschuh.gradle.ktlint:org.jlleitschuh.gradle.ktlint.gradle.plugin", version.ref = "ktlint" }
