@@ -1,0 +1,30 @@
+name: 'Build pull request'
+on:
+    pull_request: # triggered by a new pull request created by users
+        branches:
+            - 'main'
+
+# Cancel a currently running workflow from the same PR, branch or tag when a new workflow is triggered
+concurrency:
+    group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    build-pull-request-checks:
+        name: "Build pull request checks"
+        runs-on: [ ubuntu-latest ]
+        permissions:
+            contents: read
+        timeout-minutes: 10
+        steps:
+            -   name: 'Checkout'
+                uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+            -   name: Set up JDK
+                uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v.4.7.1
+                with:
+                    distribution: 'temurin'
+                    java-version: '17'
+            -   name: 'Check & Build'
+                shell: bash
+                run: |
+                    ./gradlew check build
