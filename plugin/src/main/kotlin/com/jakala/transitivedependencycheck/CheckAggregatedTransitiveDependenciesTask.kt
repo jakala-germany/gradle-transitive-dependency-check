@@ -75,9 +75,7 @@ abstract class CheckAggregatedTransitiveDependenciesTask : DefaultTask() {
             }
             throw GradleException(message.trim())
         } else {
-            println(
-                "[AggregateTransitiveDependenciesTask] All declared dependency versions match resolved ones across projects."
-            )
+            logger.info("[$TAG] All declared dependency versions match resolved ones across projects.")
         }
     }
 
@@ -102,5 +100,9 @@ abstract class CheckAggregatedTransitiveDependenciesTask : DefaultTask() {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "CheckAggregatedTransitiveDependenciesTask"
     }
 }
