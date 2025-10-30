@@ -131,7 +131,7 @@ Then in your test project build.gradle(.kts):
 
 ```kotlin
 plugins {
-    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin") version "0.1.0-SNAPSHOT"
+    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin") version "1.0.0-SNAPSHOT"
 }
 ```
 
@@ -154,4 +154,8 @@ We welcome contributions of all kinds! Please:
 ### Publish to local Maven
 
 - Run: `./gradlew :plugin:publishToMavenLocal`
-- Apply plugin with version `0.1.0-SNAPSHOT` from your local projects.
+- Apply plugin with version `1.0.0-SNAPSHOT` from your local projects.
+
+### Publish to Maven Central
+
+- See [RELEASE.md](RELEASE.md) for detailed instructions.

@@ -7,3 +7,6 @@ junit5 = "5.11.3"
 jetbrains-kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 junit5 = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit5" }
 ktlint-gradle-plugin = { module = "org.jlleitschuh.gradle.ktlint:org.jlleitschuh.gradle.ktlint.gradle.plugin", version.ref = "ktlint" }
+
+[plugins]
+publish = { id = "com.vanniktech.maven.publish", version = "0.34.0" }

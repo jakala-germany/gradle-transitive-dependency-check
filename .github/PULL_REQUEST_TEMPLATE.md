@@ -19,3 +19,4 @@ Describe tests added or steps to verify.
 - [ ] I added/updated tests
 - [ ] I updated documentation (README/CHANGELOG) if needed
 - [ ] I agree to follow the Code of Conduct
+- [ ] CHANGELOG.md's "Snapshot" section has been updated, if applicable

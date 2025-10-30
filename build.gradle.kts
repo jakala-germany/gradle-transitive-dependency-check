@@ -8,8 +8,3 @@ buildscript {
         classpath(libs.jetbrains.kotlin.gradle.plugin)
     }
 }
-
-allprojects {
-    group = "io.github.jakala-germany"
-    version = System.getenv("RELEASE_VERSION") ?: "0.1.0-SNAPSHOT"
-}

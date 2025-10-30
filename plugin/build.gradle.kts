@@ -1,11 +1,11 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.net.URI
 
 plugins {
     kotlin("jvm")
     `java-gradle-plugin`
-    id("maven-publish")
-    id("com.gradle.plugin-publish") version "1.3.0"
+    alias(libs.plugins.publish)
 
     id("convention-formatting")
 }
@@ -32,9 +32,6 @@ tasks.test {
 }
 
 gradlePlugin {
-    website.set("https://github.com/jakala-germany/gradle-transitive-dependency-check")
-    vcsUrl.set("https://github.com/jakala-germany/gradle-transitive-dependency-check.git")
-
     plugins {
         create("transitiveDependencyCheck") {
             id = "io.github.jakala-germany.transitive-dependency-check-gradle-plugin"
@@ -47,38 +44,10 @@ gradlePlugin {
 }
 
 publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            from(components["java"])
-            groupId = project.group.toString()
-            artifactId = "transitive-dependency-check-gradle-plugin"
-            version = project.version.toString()
-
-            pom {
-                name.set("Transitive Dependency Check Gradle Plugin")
-                description.set("A Gradle plugin to detect and fail on overridden transitive dependency versions")
-                url.set("https://github.com/jakala-germany/gradle-transitive-dependency-check")
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
-                    }
-                }
-                developers {
-                    developer {
-                        id.set("jakala")
-                        name.set("Jakala")
-                        email.set("opensource@jakala.com")
-                    }
-                }
-                scm {
-                    connection.set("scm:git:https://github.com/jakala-germany/gradle-transitive-dependency-check.git")
-                    developerConnection.set(
-                        "scm:git:ssh://git@github.com/jakala-germany/gradle-transitive-dependency-check.git",
-                    )
-                    url.set("https://github.com/jakala-germany/gradle-transitive-dependency-check")
-                }
-            }
+    repositories {
+        maven {
+            name = "testing"
+            url = URI.create("${rootProject.projectDir}/build/localMaven")
         }
     }
 }
