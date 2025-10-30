@@ -37,7 +37,7 @@ gradlePlugin {
 
     plugins {
         create("transitiveDependencyCheck") {
-            id = "com.jakala.transitive-dependency-check-gradle-plugin"
+            id = "io.github.jakala-germany.transitive-dependency-check-gradle-plugin"
             displayName = "Transitive Dependency Check Plugin"
             description = "Ensures no declared dependency version is overridden by a newer transitive dependency"
             implementationClass = "com.jakala.transitivedependencycheck.TransitiveDependencyCheckPlugin"

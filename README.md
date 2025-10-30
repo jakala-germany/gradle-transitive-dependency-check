@@ -56,7 +56,7 @@ Apply the plugin in your root build.gradle using the Gradle Plugins DSL:
 
 ```kotlin
 plugins {
-    id("com.jakala.transitive-dependency-check-gradle-plugin") version "<latest-version>"
+    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin") version "<latest-version>"
 }
 ```
 
@@ -64,7 +64,7 @@ Or with Groovy DSL:
 
 ```groovy
 plugins {
-    id 'com.jakala.transitive-dependency-check-gradle-plugin' version '<latest-version>'
+    id 'io.github.jakala-germany.transitive-dependency-check-gradle-plugin' version '<latest-version>'
 }
 ```
 
@@ -131,7 +131,7 @@ Then in your test project build.gradle(.kts):
 
 ```kotlin
 plugins {
-    id("com.jakala.transitive-dependency-check-gradle-plugin") version "0.1.0-SNAPSHOT"
+    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin") version "0.1.0-SNAPSHOT"
 }
 ```
 

@@ -24,7 +24,7 @@ class AggregatedTransitiveDependencyCheckFunctionalTest {
                 """
                 plugins {
                     id("java")
-                    id("com.jakala.transitive-dependency-check-gradle-plugin")
+                    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin")
                 }
                 """.trimIndent(),
             )
@@ -90,7 +90,7 @@ class AggregatedTransitiveDependencyCheckFunctionalTest {
                 """
                 plugins {
                     id("java")
-                    id("com.jakala.transitive-dependency-check-gradle-plugin")
+                    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin")
                 }
                 """.trimIndent(),
             )
@@ -159,7 +159,7 @@ class AggregatedTransitiveDependencyCheckFunctionalTest {
                 """
                 plugins {
                     id("java")
-                    id("com.jakala.transitive-dependency-check-gradle-plugin")
+                    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin")
                 }
                 """.trimIndent(),
             )
@@ -247,7 +247,7 @@ class AggregatedTransitiveDependencyCheckFunctionalTest {
                 """
                 plugins {
                     id("java")
-                    id("com.jakala.transitive-dependency-check-gradle-plugin")
+                    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin")
                 }
                 """.trimIndent(),
             )
