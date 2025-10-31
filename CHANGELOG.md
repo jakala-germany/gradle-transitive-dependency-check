@@ -8,7 +8,7 @@
 
 - Upcoming changes go here
 
-## [1.0.0] - 2025-10-24
+## [1.0.0] - 2025-10-31
 
 [1.0.0]: https://github.com/jakala-germany/gradle-transitive-dependency-check/releases/tag/1.0.0
 
