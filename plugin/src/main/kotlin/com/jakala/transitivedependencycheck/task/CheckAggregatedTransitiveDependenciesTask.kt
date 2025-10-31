@@ -1,10 +1,7 @@
-package com.jakala.transitivedependencycheck
+package com.jakala.transitivedependencycheck.task
 
-import com.jakala.transitivedependencycheck.CheckTransitiveDependenciesTask.Companion.KEY_DECLARED
-import com.jakala.transitivedependencycheck.CheckTransitiveDependenciesTask.Companion.KEY_RESOLVED
-import com.jakala.transitivedependencycheck.DependencyDetectionHelper.compareVersions
-import com.jakala.transitivedependencycheck.DependencyDetectionHelper.detectDeclaredVersionMismatches
-import com.jakala.transitivedependencycheck.DependencyDetectionHelper.detectResolvedUpgradeMismatches
+import com.jakala.transitivedependencycheck.model.DependencyGroupName
+import com.jakala.transitivedependencycheck.model.DependencyVersion
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
@@ -34,7 +31,7 @@ abstract class CheckAggregatedTransitiveDependenciesTask : DefaultTask() {
             .forEach { file ->
                 parseReport(file) { kind, groupName, versionsOrVersion ->
                     when (kind) {
-                        KEY_DECLARED -> {
+                        CheckTransitiveDependenciesTask.Companion.KEY_DECLARED -> {
                             val key = DependencyGroupName(groupName)
                             val versions = versionsOrVersion.split(",").filter { it.isNotBlank() }
                             declaredGlobal
@@ -42,11 +39,14 @@ abstract class CheckAggregatedTransitiveDependenciesTask : DefaultTask() {
                                 .addAll(versions.map { version -> DependencyVersion(version) })
                         }
 
-                        KEY_RESOLVED -> {
+                        CheckTransitiveDependenciesTask.Companion.KEY_RESOLVED -> {
                             val key = DependencyGroupName(groupName)
                             val version = DependencyVersion(versionsOrVersion)
                             val current = resolvedGlobal[key]
-                            if (current == null || compareVersions(version, current) > 0) {
+                            if (
+                                current == null ||
+                                DependencyDetectionHelper.compareVersions(version, current) > 0
+                            ) {
                                 resolvedGlobal[key] = version
                             }
                         }
@@ -54,10 +54,10 @@ abstract class CheckAggregatedTransitiveDependenciesTask : DefaultTask() {
                 }
             }
 
-        val declaredMismatches = detectDeclaredVersionMismatches(
+        val declaredMismatches = DependencyDetectionHelper.detectDeclaredVersionMismatches(
             declaredGlobal.mapValues { it.value.toSet() },
         )
-        val resolvedUpgradeMismatches = detectResolvedUpgradeMismatches(
+        val resolvedUpgradeMismatches = DependencyDetectionHelper.detectResolvedUpgradeMismatches(
             declaredGlobal.mapValues { it.value.toSet() },
             resolvedGlobal,
         )
@@ -87,16 +87,16 @@ abstract class CheckAggregatedTransitiveDependenciesTask : DefaultTask() {
             if (line.isBlank()) return@forEachLine
             val parts = line.split('\t')
             when (parts.firstOrNull()) {
-                KEY_DECLARED -> {
+                CheckTransitiveDependenciesTask.Companion.KEY_DECLARED -> {
                     val ga = parts.getOrNull(1) ?: return@forEachLine
                     val versions = parts.getOrNull(2) ?: ""
-                    onEntry(KEY_DECLARED, ga, versions)
+                    onEntry(CheckTransitiveDependenciesTask.Companion.KEY_DECLARED, ga, versions)
                 }
 
-                KEY_RESOLVED -> {
+                CheckTransitiveDependenciesTask.Companion.KEY_RESOLVED -> {
                     val ga = parts.getOrNull(1) ?: return@forEachLine
                     val version = parts.getOrNull(2) ?: ""
-                    onEntry(KEY_RESOLVED, ga, version)
+                    onEntry(CheckTransitiveDependenciesTask.Companion.KEY_RESOLVED, ga, version)
                 }
             }
         }

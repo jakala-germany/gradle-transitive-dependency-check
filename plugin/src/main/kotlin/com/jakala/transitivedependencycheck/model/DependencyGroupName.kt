@@ -1,4 +1,4 @@
-package com.jakala.transitivedependencycheck
+package com.jakala.transitivedependencycheck.model
 
 @JvmInline
 internal value class DependencyGroupName(val value: String) {

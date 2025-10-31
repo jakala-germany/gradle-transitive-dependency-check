@@ -1,4 +1,7 @@
-package com.jakala.transitivedependencycheck
+package com.jakala.transitivedependencycheck.task
+
+import com.jakala.transitivedependencycheck.model.DependencyGroupName
+import com.jakala.transitivedependencycheck.model.DependencyVersion
 
 object DependencyDetectionHelper {
     internal fun compareVersions(

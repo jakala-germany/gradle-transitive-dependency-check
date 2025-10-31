@@ -1,5 +1,7 @@
 package com.jakala.transitivedependencycheck
 
+import com.jakala.transitivedependencycheck.task.CheckAggregatedTransitiveDependenciesTask
+import com.jakala.transitivedependencycheck.task.CheckTransitiveDependenciesTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project

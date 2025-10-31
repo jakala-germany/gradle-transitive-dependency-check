@@ -1,9 +1,7 @@
-package com.jakala.transitivedependencycheck
+package com.jakala.transitivedependencycheck.task
 
-import com.jakala.transitivedependencycheck.DependencyDetectionHelper.compareVersions
-import com.jakala.transitivedependencycheck.DependencyDetectionHelper.detectDeclaredVersionMismatches
-import com.jakala.transitivedependencycheck.DependencyDetectionHelper.detectResolvedUpgradeMismatches
-import com.jakala.transitivedependencycheck.DependencyDetectionHelper.isRelevantClasspath
+import com.jakala.transitivedependencycheck.model.DependencyGroupName
+import com.jakala.transitivedependencycheck.model.DependencyVersion
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.artifacts.component.ComponentIdentifier
@@ -99,8 +97,9 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
         }
 
         // Local project mismatches
-        val declaredMismatches = detectDeclaredVersionMismatches(declaredDependencyVersions)
-        val resolvedUpgradeMismatches = detectResolvedUpgradeMismatches(
+        val declaredMismatches =
+            DependencyDetectionHelper.detectDeclaredVersionMismatches(declaredDependencyVersions)
+        val resolvedUpgradeMismatches = DependencyDetectionHelper.detectResolvedUpgradeMismatches(
             declared = declaredDependencyVersions.mapValues { it.value.toSet() },
             resolved = resolvedDependencies,
         )
@@ -155,8 +154,9 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
     private fun buildResolvedDependenciesSnapshot(): Map<String, String> {
         val resolved = mutableMapOf<String, String>()
         project.configurations
-            .matching { configuration -> configuration.isCanBeResolved && isRelevantClasspath(configuration.name) }
-            .forEach { config ->
+            .matching { configuration ->
+                configuration.isCanBeResolved && DependencyDetectionHelper.isRelevantClasspath(configuration.name)
+            }.forEach { config ->
                 runCatching {
                     val root = config.incoming.resolutionResult.root
                     val visited = mutableSetOf<ComponentIdentifier>()
@@ -176,7 +176,7 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
                                 val key = "${moduleId.group}:${moduleId.module}"
                                 val version = moduleId.version
                                 val current = resolved[key]
-                                if (current == null || compareVersions(
+                                if (current == null || DependencyDetectionHelper.compareVersions(
                                         DependencyVersion(version),
                                         DependencyVersion(current),
                                     ) > 0
