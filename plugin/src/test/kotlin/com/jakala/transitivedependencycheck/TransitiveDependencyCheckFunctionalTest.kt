@@ -50,6 +50,51 @@ class TransitiveDependencyCheckFunctionalTest {
     }
 
     @Test
+    fun `warns when declared dependency is overridden within same module by newer transitive dependency but warn`() {
+        val projectDir = createTempDir(prefix = "transitiveDependencyCheck")
+        projectDir
+            .resolve("settings.gradle.kts")
+            .writeText("rootProject.name = \"sample\"\n")
+        projectDir
+            .resolve("build.gradle.kts")
+            .writeText(
+                """
+                import com.jakala.transitivedependencycheck.extension.CheckViolationAction
+
+                plugins {
+                    id("java")
+                    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin")
+                }
+
+                transitiveDependencyCheck {
+                    transitiveUpgradeCheckViolationAction.set(CheckViolationAction.WARN)
+                }
+
+                repositories {
+                    mavenCentral()
+                }
+
+                dependencies {
+                    implementation("org.apache.httpcomponents:httpclient:4.5.13")
+                    implementation("commons-codec:commons-codec:1.10")
+                }
+                """.trimIndent(),
+            )
+
+        val result = GradleRunner
+            .create()
+            .withProjectDir(projectDir)
+            .withPluginClasspath()
+            .withArguments("checkTransitiveDependencies", "-s")
+            .build()
+
+        val output = result.output
+        assertTrue(output.contains("Some dependencies were upgraded transitively in root project \'sample\'."), output)
+        assertTrue(output.contains("commons-codec:commons-codec declared with 1.10 → resolved as 1.11"), output)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":checkTransitiveDependencies")?.outcome)
+    }
+
+    @Test
     fun `succeeds when checking module directly for declared dependency override by newer dependency`() {
         val projectDir = createTempDir(prefix = "transitiveDependencyCheck")
         val moduleOneDir = createTempDir(path = projectDir.toPath(), prefix = "moduleOne")

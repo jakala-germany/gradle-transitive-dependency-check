@@ -1,5 +1,6 @@
 package com.jakala.transitivedependencycheck.task
 
+import com.jakala.transitivedependencycheck.extension.CheckViolationAction
 import com.jakala.transitivedependencycheck.model.DependencyGroupName
 import com.jakala.transitivedependencycheck.model.DependencyVersion
 import org.gradle.api.DefaultTask
@@ -25,7 +26,10 @@ import java.io.PrintWriter
  */
 abstract class CheckTransitiveDependenciesTask : DefaultTask() {
     @get:Input
-    abstract val ignoreFailures: Property<Boolean>
+    abstract val transitiveUpgradeCheckViolationAction: Property<CheckViolationAction>
+
+    @get:Input
+    abstract val versionMismatchCheckViolationAction: Property<CheckViolationAction>
 
     @get:Input
     abstract val declaredDependenciesSnapshot: MapProperty<String, List<String>>
@@ -43,7 +47,10 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
         description = "Checks transitive dependencies for this project and writes a report"
         group = "verification"
         notCompatibleWithConfigurationCache("Inspects configurations for dependency resolution.")
-        ignoreFailures.convention(false)
+
+        transitiveUpgradeCheckViolationAction.convention(CheckViolationAction.FAIL)
+        versionMismatchCheckViolationAction.convention(CheckViolationAction.FAIL)
+
         declaredDependenciesFile.convention(
             project.layout.buildDirectory.file("reports/transitive-dependency-check/declared.txt"),
         )
@@ -97,28 +104,40 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
         }
 
         // Local project mismatches
-        val declaredMismatches =
-            DependencyDetectionHelper.detectDeclaredVersionMismatches(declaredDependencyVersions)
+        val declaredMismatches = DependencyDetectionHelper.detectDeclaredVersionMismatches(declaredDependencyVersions)
         val resolvedUpgradeMismatches = DependencyDetectionHelper.detectResolvedUpgradeMismatches(
             declared = declaredDependencyVersions.mapValues { it.value.toSet() },
             resolved = resolvedDependencies,
         )
-        if (declaredMismatches.isNotEmpty() || resolvedUpgradeMismatches.isNotEmpty()) {
-            val message = buildString {
-                if (declaredMismatches.isNotEmpty()) {
+
+        when {
+            declaredMismatches.isNotEmpty() -> {
+                val message = buildString {
                     appendLine("Some dependencies were declared with different versions in ${project.displayName}.")
                     declaredMismatches.forEach { appendLine(it) }
+                }.trim()
+                when (versionMismatchCheckViolationAction.get()) {
+                    CheckViolationAction.FAIL -> throw GradleException(message)
+                    CheckViolationAction.WARN -> logger.warn("[$TAG] $message")
+                    CheckViolationAction.IGNORE -> Unit
                 }
-                if (resolvedUpgradeMismatches.isNotEmpty()) {
+            }
+
+            resolvedUpgradeMismatches.isNotEmpty() -> {
+                val message = buildString {
                     appendLine("Some dependencies were upgraded transitively in ${project.displayName}.")
                     resolvedUpgradeMismatches.forEach { appendLine(it) }
+                }.trim()
+                when (transitiveUpgradeCheckViolationAction.get()) {
+                    CheckViolationAction.FAIL -> throw GradleException(message)
+                    CheckViolationAction.WARN -> logger.warn("[$TAG] $message")
+                    CheckViolationAction.IGNORE -> Unit
                 }
             }
-            if (ignoreFailures.get().not()) {
-                throw GradleException(message.trim())
+
+            else -> {
+                logger.info("[$TAG] All declared dependency versions look fine.")
             }
-        } else {
-            logger.info("[$TAG] ${project.path}: All declared dependency versions match resolved ones.")
         }
     }
 

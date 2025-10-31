@@ -11,7 +11,8 @@ A Gradle plugin that ensures no declared dependency version is overridden by a n
 
 Jump to:
 [Introduction](#Introduction) |
-[Getting Started](#Getting Started) |
+[Getting Started](#Getting-Started) |
+[Configuration](#Configuration) |
 [Example](#Example) |
 [Development](#Development) |
 [Contribution](#Contribution)
@@ -80,6 +81,28 @@ Or if you want to check the transitive dependencies on a single project execute:
 
 ```bash
 ./gradlew :myProject:checkTransitiveDependencies
+```
+
+## Configuration
+
+Configure the plugin using the `transitiveDependencyCheck` DSL:
+
+```kotlin
+
+plugins {
+    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin") version "<latest-version>"
+}
+
+transitiveDependencyCheck {
+    // Set the action used for transitive upgrade check violations using
+    // [com.jakala.transitivedependencycheck.extension.CheckViolationAction].
+    // Possible values are FAIL (default), WARN, IGNORE
+    transitiveUpgradeCheckViolationAction.set(CheckViolationAction.WARN)
+    // Set the action used for version mismatch check violations using
+    // [com.jakala.transitivedependencycheck.extension.CheckViolationAction].
+    // Possible values are FAIL (default), WARN, IGNORE
+    versionMismatchCheckViolationAction.set(CheckViolationAction.WARN)
+}
 ```
 
 ## Example

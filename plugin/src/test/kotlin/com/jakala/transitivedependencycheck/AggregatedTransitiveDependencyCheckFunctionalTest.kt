@@ -77,6 +77,78 @@ class AggregatedTransitiveDependencyCheckFunctionalTest {
     }
 
     @Test
+    fun `warns when declared dependency is overridden by newer transitive dependency in subprojects but warn`() {
+        val projectDir = createTempDir(prefix = "transitiveDependencyCheck")
+        val moduleOneDir = createTempDir(path = projectDir.toPath(), prefix = "moduleOne")
+        val moduleTwoDir = createTempDir(path = projectDir.toPath(), prefix = "moduleTwo")
+        projectDir
+            .resolve("settings.gradle.kts")
+            .writeText("rootProject.name = \"sample\"\ninclude(\"${moduleOneDir.name}\", \"${moduleTwoDir.name}\")\n")
+        projectDir
+            .resolve("build.gradle.kts")
+            .writeText(
+                """
+                import com.jakala.transitivedependencycheck.extension.CheckViolationAction
+
+                plugins {
+                    id("java")
+                    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin")
+                }
+
+                transitiveDependencyCheck {
+                    transitiveUpgradeCheckViolationAction.set(CheckViolationAction.WARN)
+                }
+                """.trimIndent(),
+            )
+        moduleOneDir
+            .resolve("build.gradle.kts")
+            .writeText(
+                """
+                plugins {
+                    id("java")
+                }
+
+                repositories {
+                    mavenCentral()
+                }
+
+                dependencies {
+                    implementation("org.apache.httpcomponents:httpclient:4.5.13")
+                }
+                """.trimIndent(),
+            )
+        moduleTwoDir
+            .resolve("build.gradle.kts")
+            .writeText(
+                """
+                plugins {
+                    id("java")
+                }
+
+                repositories {
+                    mavenCentral()
+                }
+
+                dependencies {
+                    implementation("commons-codec:commons-codec:1.10")
+                }
+                """.trimIndent(),
+            )
+
+        val result = GradleRunner
+            .create()
+            .withProjectDir(projectDir)
+            .withPluginClasspath()
+            .withArguments("checkAggregatedTransitiveDependencies", "-s")
+            .build()
+
+        val output = result.output
+        assertTrue(output.contains("Some dependencies were upgraded transitively across projects."), output)
+        assertTrue(output.contains("commons-codec:commons-codec declared with 1.10 → resolved as 1.11"), output)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":checkAggregatedTransitiveDependencies")?.outcome)
+    }
+
+    @Test
     fun `fails when declared dependencies differ in multiple modules`() {
         val projectDir = createTempDir(prefix = "transitiveDependencyCheck")
         val moduleOneDir = createTempDir(path = projectDir.toPath(), prefix = "moduleOne")
@@ -143,6 +215,78 @@ class AggregatedTransitiveDependencyCheckFunctionalTest {
     }
 
     @Test
+    fun `warns when declared dependencies differ in multiple modules but warn`() {
+        val projectDir = createTempDir(prefix = "transitiveDependencyCheck")
+        val moduleOneDir = createTempDir(path = projectDir.toPath(), prefix = "moduleOne")
+        val moduleTwoDir = createTempDir(path = projectDir.toPath(), prefix = "moduleTwo")
+        projectDir
+            .resolve("settings.gradle.kts")
+            .writeText("rootProject.name = \"sample\"\ninclude(\"${moduleOneDir.name}\", \"${moduleTwoDir.name}\")\n")
+        projectDir
+            .resolve("build.gradle.kts")
+            .writeText(
+                """
+                import com.jakala.transitivedependencycheck.extension.CheckViolationAction
+
+                plugins {
+                    id("java")
+                    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin")
+                }
+
+                transitiveDependencyCheck {
+                    versionMismatchCheckViolationAction.set(CheckViolationAction.WARN)
+                }
+                """.trimIndent(),
+            )
+        moduleOneDir
+            .resolve("build.gradle.kts")
+            .writeText(
+                """
+                plugins {
+                    id("java")
+                }
+
+                repositories {
+                    mavenCentral()
+                }
+
+                dependencies {
+                    implementation("commons-codec:commons-codec:1.10")
+                }
+                """.trimIndent(),
+            )
+        moduleTwoDir
+            .resolve("build.gradle.kts")
+            .writeText(
+                """
+                plugins {
+                    id("java")
+                }
+
+                repositories {
+                    mavenCentral()
+                }
+
+                dependencies {
+                    implementation("commons-codec:commons-codec:1.11")
+                }
+                """.trimIndent(),
+            )
+
+        val result = GradleRunner
+            .create()
+            .withProjectDir(projectDir)
+            .withPluginClasspath()
+            .withArguments("checkAggregatedTransitiveDependencies", "-s")
+            .build()
+
+        val output = result.output
+        assertTrue(output.contains("Some dependencies were declared with different versions across projects."), output)
+        assertTrue(output.contains("commons-codec:commons-codec declared with multiple versions → 1.10, 1.11"), output)
+        assertEquals(TaskOutcome.SUCCESS, result.task(":checkAggregatedTransitiveDependencies")?.outcome)
+    }
+
+    @Test
     fun `fails when declared dependency is overridden within multiple projects by newer transitive dependency`() {
         val projectDir = createTempDir(prefix = "transitiveDependencyCheck")
         val moduleOneDir = createTempDir(path = projectDir.toPath(), prefix = "moduleOne")
@@ -151,7 +295,7 @@ class AggregatedTransitiveDependencyCheckFunctionalTest {
         projectDir
             .resolve("settings.gradle.kts")
             .writeText(
-                "rootProject.name = \"sample\"\ninclude(\"${moduleOneDir.name}\", \"${moduleTwoDir.name}\", \"${moduleThreeDir.name}\")\n"
+                "rootProject.name = \"sample\"\ninclude(\"${moduleOneDir.name}\", \"${moduleTwoDir.name}\", \"${moduleThreeDir.name}\")\n",
             )
         projectDir
             .resolve("build.gradle.kts")
@@ -239,7 +383,7 @@ class AggregatedTransitiveDependencyCheckFunctionalTest {
         projectDir
             .resolve("settings.gradle.kts")
             .writeText(
-                "rootProject.name = \"sample\"\ninclude(\"${moduleOneDir.name}\", \"${moduleTwoDir.name}\", \"${moduleThreeDir.name}\")\n"
+                "rootProject.name = \"sample\"\ninclude(\"${moduleOneDir.name}\", \"${moduleTwoDir.name}\", \"${moduleThreeDir.name}\")\n",
             )
         projectDir
             .resolve("build.gradle.kts")
