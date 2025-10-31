@@ -28,6 +28,8 @@ class TransitiveDependencyCheckPlugin : Plugin<Project> {
             ) { task ->
                 task.transitiveUpgradeCheckViolationAction.set(extension.transitiveUpgradeCheckViolationAction)
                 task.versionMismatchCheckViolationAction.set(extension.versionMismatchCheckViolationAction)
+                task.transitiveUpgradeExclusion.set(extension.transitiveUpgradeExclusion)
+                task.versionMismatchExclusion.set(extension.versionMismatchExclusion)
             }
         }
 
@@ -46,6 +48,8 @@ class TransitiveDependencyCheckPlugin : Plugin<Project> {
         ) { task ->
             task.transitiveUpgradeCheckViolationAction.set(extension.transitiveUpgradeCheckViolationAction)
             task.versionMismatchCheckViolationAction.set(extension.versionMismatchCheckViolationAction)
+            task.transitiveUpgradeExclusion.set(extension.transitiveUpgradeExclusion)
+            task.versionMismatchExclusion.set(extension.versionMismatchExclusion)
             task.dependsOn(perProjectAggregationTasks)
             val reports = perProjectAggregationTasks.map { taskProvider ->
                 project

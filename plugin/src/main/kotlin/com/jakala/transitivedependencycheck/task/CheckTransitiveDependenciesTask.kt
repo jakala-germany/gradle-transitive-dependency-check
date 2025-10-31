@@ -12,6 +12,7 @@ import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
@@ -32,6 +33,12 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
     abstract val versionMismatchCheckViolationAction: Property<CheckViolationAction>
 
     @get:Input
+    abstract val transitiveUpgradeExclusion: SetProperty<String>
+
+    @get:Input
+    abstract val versionMismatchExclusion: SetProperty<String>
+
+    @get:Input
     abstract val declaredDependenciesSnapshot: MapProperty<String, List<String>>
 
     @get:Input
@@ -50,6 +57,8 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
 
         transitiveUpgradeCheckViolationAction.convention(CheckViolationAction.FAIL)
         versionMismatchCheckViolationAction.convention(CheckViolationAction.FAIL)
+        transitiveUpgradeExclusion.convention(emptySet())
+        versionMismatchExclusion.convention(emptySet())
 
         declaredDependenciesFile.convention(
             project.layout.buildDirectory.file("reports/transitive-dependency-check/declared.txt"),
@@ -104,10 +113,14 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
         }
 
         // Local project mismatches
-        val declaredMismatches = DependencyDetectionHelper.detectDeclaredVersionMismatches(declaredDependencyVersions)
+        val declaredMismatches = DependencyDetectionHelper.detectDeclaredVersionMismatches(
+            declared = declaredDependencyVersions,
+            exclusions = versionMismatchExclusion.get().map { it.toRegex() },
+        )
         val resolvedUpgradeMismatches = DependencyDetectionHelper.detectResolvedUpgradeMismatches(
             declared = declaredDependencyVersions.mapValues { it.value.toSet() },
             resolved = resolvedDependencies,
+            exclusions = transitiveUpgradeExclusion.get().map { it.toRegex() },
         )
 
         when {

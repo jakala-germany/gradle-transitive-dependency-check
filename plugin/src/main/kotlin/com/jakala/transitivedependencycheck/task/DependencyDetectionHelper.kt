@@ -27,10 +27,18 @@ object DependencyDetectionHelper {
 
     internal fun detectDeclaredVersionMismatches(
         declared: Map<DependencyGroupName, Set<DependencyVersion>>,
+        exclusions: List<Regex>,
     ): List<String> {
         return declared.mapNotNull { (key, versions) ->
             if (versions.size > 1) {
-                "$key declared with multiple versions → ${versions.joinToString { it.value }}"
+                val isExcluded = versions.all { version ->
+                    isExcluded(exclusions = exclusions, groupName = key.value, version = version.value)
+                }
+                if (isExcluded) {
+                    null
+                } else {
+                    "$key declared with multiple versions → ${versions.joinToString { it.value }}"
+                }
             } else {
                 null
             }
@@ -40,6 +48,7 @@ object DependencyDetectionHelper {
     internal fun detectResolvedUpgradeMismatches(
         declared: Map<DependencyGroupName, Set<DependencyVersion>>,
         resolved: Map<DependencyGroupName, DependencyVersion>,
+        exclusions: List<Regex>,
     ): List<String> {
         return declared.mapNotNull { (key, versions) ->
             if (versions.isEmpty()) return@mapNotNull null
@@ -47,10 +56,23 @@ object DependencyDetectionHelper {
             val declaredVersion = versions.first()
             val resolvedVersion = resolved[key] ?: return@mapNotNull null
             if (resolvedVersion != declaredVersion && compareVersions(resolvedVersion, declaredVersion) > 0) {
-                "$key declared with ${declaredVersion.value} → resolved as ${resolvedVersion.value}"
+                val isExcluded = isExcluded(
+                    exclusions = exclusions,
+                    groupName = key.value,
+                    version = declaredVersion.value,
+                )
+                if (isExcluded) {
+                    null
+                } else {
+                    "$key declared with ${declaredVersion.value} → resolved as ${resolvedVersion.value}"
+                }
             } else {
                 null
             }
         }
+    }
+
+    private fun isExcluded(exclusions: List<Regex>, groupName: String, version: String): Boolean {
+        return exclusions.any { regex -> regex.matches(input = "$groupName:$version") }
     }
 }
