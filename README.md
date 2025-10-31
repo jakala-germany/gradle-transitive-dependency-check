@@ -102,6 +102,10 @@ transitiveDependencyCheck {
     // [com.jakala.transitivedependencycheck.extension.CheckViolationAction].
     // Possible values are FAIL (default), WARN, IGNORE
     versionMismatchCheckViolationAction.set(CheckViolationAction.WARN)
+    // Add custom exclusion regex rules to be ignored by transitive upgrade check violations
+    transitiveUpgradeExclusion.add("commons-codec:.*:.*")
+    // Add custom exclusion regex rules to be ignored by version mismatch check violations
+    versionMismatchExclusion.add("commons-codec:commons-codec2:.*")
 }
 ```
 

@@ -7,6 +7,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.PathSensitive
@@ -21,6 +22,12 @@ abstract class CheckAggregatedTransitiveDependenciesTask : DefaultTask() {
     @get:Input
     abstract val versionMismatchCheckViolationAction: Property<CheckViolationAction>
 
+    @get:Input
+    abstract val transitiveUpgradeExclusion: SetProperty<String>
+
+    @get:Input
+    abstract val versionMismatchExclusion: SetProperty<String>
+
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val inputReports: ConfigurableFileCollection
@@ -32,6 +39,8 @@ abstract class CheckAggregatedTransitiveDependenciesTask : DefaultTask() {
 
         transitiveUpgradeCheckViolationAction.convention(CheckViolationAction.FAIL)
         versionMismatchCheckViolationAction.convention(CheckViolationAction.FAIL)
+        transitiveUpgradeExclusion.convention(emptySet())
+        versionMismatchExclusion.convention(emptySet())
     }
 
     @TaskAction
@@ -67,12 +76,17 @@ abstract class CheckAggregatedTransitiveDependenciesTask : DefaultTask() {
             }
 
         val declaredMismatches = DependencyDetectionHelper.detectDeclaredVersionMismatches(
-            declaredGlobal.mapValues { it.value.toSet() },
+            declared = declaredGlobal.mapValues { it.value.toSet() },
+            exclusions = versionMismatchExclusion.get().map { it.toRegex() },
         )
         val resolvedUpgradeMismatches = DependencyDetectionHelper.detectResolvedUpgradeMismatches(
-            declaredGlobal.mapValues { it.value.toSet() },
-            resolvedGlobal,
+            declared = declaredGlobal.mapValues { it.value.toSet() },
+            resolved = resolvedGlobal,
+            exclusions = transitiveUpgradeExclusion.get().map { it.toRegex() },
         )
+
+        val mismatchExclusionRegex = versionMismatchExclusion.get().map { it.toRegex() }
+        val upgradeExclusionRegex = transitiveUpgradeExclusion.get().map { it.toRegex() }
 
         when {
             declaredMismatches.isNotEmpty() -> {

@@ -1,6 +1,7 @@
 package com.jakala.transitivedependencycheck.extension
 
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
 
 interface TransitiveDependecyCheckExtension {
     /**
@@ -14,11 +15,25 @@ interface TransitiveDependecyCheckExtension {
      * Default: [CheckViolationAction.FAIL]
      */
     val versionMismatchCheckViolationAction: Property<CheckViolationAction>
+
+    /**
+     * Transitive dependency upgrade check exclusion. Exclude via regex.
+     * Default: empty
+     */
+    val transitiveUpgradeExclusion: SetProperty<String>
+
+    /**
+     * Dependency version mismatch exclusion. Exclude via regex.
+     * Default: empty
+     */
+    val versionMismatchExclusion: SetProperty<String>
 }
 
 internal abstract class MutableTransitiveDependecyCheckExtension : TransitiveDependecyCheckExtension {
     init {
         transitiveUpgradeCheckViolationAction.convention(CheckViolationAction.FAIL)
         versionMismatchCheckViolationAction.convention(CheckViolationAction.FAIL)
+        transitiveUpgradeExclusion.convention(emptySet())
+        versionMismatchExclusion.convention(emptySet())
     }
 }
