@@ -25,19 +25,19 @@ because there are breaking changes within 1.11 which is transitively used by `ht
 detects such transitive dependency updates and informs you about it. As gradle automatically picks the highest number
 you have `commons-codec:1.11` within your project and there is no reason for you to declare version `1.10` anymore.
 
-Traversal dependency update detection:
+Transitive dependency update detection:
 
 ```
 +--- project :module:one
 |    \--- org.apache.httpcomponents:httpclient:4.5.13
 |    |    \--- commons-codec:commons-codec:1.11
 +--- project :module:two
-|    \--- commons-codec:commons-codec:1.10 -> 1.11 <-- Detects these traversal dependency updates
+|    \--- commons-codec:commons-codec:1.10 -> 1.11 <-- Detects these transitive dependency updates
 ```
 
 ```
 +--- project :sample
-|    \--- commons-codec:commons-codec:1.10 -> 1.11 <-- Detects these traversal dependency updates
+|    \--- commons-codec:commons-codec:1.10 -> 1.11 <-- Detects these transitive dependency updates
 |    \--- org.apache.httpcomponents:httpclient:4.5.13
 |    |    \--- commons-codec:commons-codec:1.11
 ```
