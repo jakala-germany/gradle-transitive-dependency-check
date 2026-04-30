@@ -18,8 +18,10 @@ internal object ViolationReporter {
         when {
             declaredMismatches.isNotEmpty() ->
                 react(versionMismatchAction, message(declaredHeader, declaredMismatches), tag, logger)
+
             resolvedMismatches.isNotEmpty() ->
                 react(transitiveUpgradeAction, message(resolvedHeader, resolvedMismatches), tag, logger)
+
             else -> logger.info("[$tag] All declared dependency versions look fine.")
         }
     }

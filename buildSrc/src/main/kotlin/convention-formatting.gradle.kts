@@ -9,7 +9,7 @@ tasks.matching { it.name == "check" }.configureEach {
 }
 
 ktlint {
-    version.set("1.7.1")
+    version.set("1.8.0")
     outputColorName.set("RED")
     relative.set(true)
     reporters {
