@@ -34,7 +34,6 @@ abstract class CheckAggregatedTransitiveDependenciesTask : DefaultTask() {
     init {
         description = "Checks aggregated per-project transitive dependency reports and checks cross-project mismatches"
         group = "verification"
-        notCompatibleWithConfigurationCache("Aggregated task outputs across projects.")
 
         transitiveUpgradeCheckViolationAction.convention(CheckViolationAction.FAIL)
         versionMismatchCheckViolationAction.convention(CheckViolationAction.FAIL)

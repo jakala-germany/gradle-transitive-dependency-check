@@ -4,10 +4,6 @@ import com.jakala.transitivedependencycheck.extension.CheckViolationAction
 import com.jakala.transitivedependencycheck.model.DependencyGroupName
 import com.jakala.transitivedependencycheck.model.DependencyVersion
 import org.gradle.api.DefaultTask
-import org.gradle.api.artifacts.component.ComponentIdentifier
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
-import org.gradle.api.artifacts.result.ResolvedComponentResult
-import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
@@ -18,12 +14,6 @@ import org.gradle.api.tasks.TaskAction
 import java.io.File
 import java.io.PrintWriter
 
-/**
- * Per-project task:
- * - Collects declared and resolved dependencies for the current project only
- * - Writes a report file
- * - Fails on local mismatches (declared multi-version or resolved upgrades)
- */
 abstract class CheckTransitiveDependenciesTask : DefaultTask() {
     @get:Input
     abstract val transitiveUpgradeCheckViolationAction: Property<CheckViolationAction>
@@ -43,6 +33,12 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
     @get:Input
     abstract val resolvedDependenciesSnapshot: MapProperty<String, String>
 
+    @get:Input
+    abstract val projectPath: Property<String>
+
+    @get:Input
+    abstract val projectDisplayName: Property<String>
+
     @get:OutputFile
     abstract val declaredDependenciesFile: RegularFileProperty
 
@@ -52,66 +48,53 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
     init {
         description = "Checks transitive dependencies for this project and writes a report"
         group = "verification"
-        notCompatibleWithConfigurationCache("Inspects configurations for dependency resolution.")
 
         transitiveUpgradeCheckViolationAction.convention(CheckViolationAction.FAIL)
         versionMismatchCheckViolationAction.convention(CheckViolationAction.FAIL)
         transitiveUpgradeExclusion.convention(emptySet())
         versionMismatchExclusion.convention(emptySet())
-
-        declaredDependenciesFile.convention(
-            project.layout.buildDirectory.file("reports/transitive-dependency-check/declared.txt"),
-        )
-        resolvedDependenciesFile.convention(
-            project.layout.buildDirectory.file("reports/transitive-dependency-check/resolved.txt"),
-        )
-
-        declaredDependenciesSnapshot.convention(project.provider { buildDeclaredDependenciesSnapshot() })
-        resolvedDependenciesSnapshot.convention(project.provider { buildResolvedDependenciesSnapshot() })
     }
 
     @TaskAction
     fun runCheck() {
-        val declaredDependenciesSnapshotValue = declaredDependenciesSnapshot.get()
-        val resolvedDependenciesSnapshotValue = resolvedDependenciesSnapshot.get()
+        val path = projectPath.get()
+        val displayName = projectDisplayName.get()
+        val declaredSnap = declaredDependenciesSnapshot.get()
+        val resolvedSnap = resolvedDependenciesSnapshot.get()
 
-        logger.info("[$TAG] Checking declared and resolved dependencies of ${project.path}")
+        logger.info("[$TAG] Checking declared and resolved dependencies of $path")
 
-        // Declared
         writeReport(
             file = declaredDependenciesFile.get().asFile,
-            projectPath = project.path,
+            projectPath = path,
             write = {
-                declaredDependenciesSnapshotValue
+                declaredSnap
                     .toSortedMap(compareBy { it })
                     .forEach { (groupName, versions) ->
-                        println("$KEY_DECLARED\t${groupName}\t${versions.joinToString(",")}")
+                        println("$KEY_DECLARED\t$groupName\t${versions.joinToString(",")}")
                     }
             },
         )
-        // Resolved
         writeReport(
             file = resolvedDependenciesFile.get().asFile,
-            projectPath = project.path,
+            projectPath = path,
             write = {
-                resolvedDependenciesSnapshotValue
+                resolvedSnap
                     .toSortedMap(compareBy { it })
-                    .forEach { (groupName, version) -> println("$KEY_RESOLVED\t${groupName}\t$version") }
+                    .forEach { (groupName, version) -> println("$KEY_RESOLVED\t$groupName\t$version") }
             },
         )
 
-        // Build structures expected by detection helpers
         val declaredDependencyVersions = mutableMapOf<DependencyGroupName, MutableSet<DependencyVersion>>()
-        declaredDependenciesSnapshotValue.forEach { (groupName, versions) ->
+        declaredSnap.forEach { (groupName, versions) ->
             declaredDependencyVersions[DependencyGroupName(groupName)] =
                 versions.map(::DependencyVersion).toMutableSet()
         }
         val resolvedDependencies = mutableMapOf<DependencyGroupName, DependencyVersion>()
-        resolvedDependenciesSnapshotValue.forEach { (groupName, version) ->
+        resolvedSnap.forEach { (groupName, version) ->
             resolvedDependencies[DependencyGroupName(groupName)] = DependencyVersion(version)
         }
 
-        // Local project mismatches
         val declaredMismatches = DependencyDetectionHelper.detectDeclaredVersionMismatches(
             declared = declaredDependencyVersions,
             exclusions = versionMismatchExclusion.get().map { it.toRegex() },
@@ -127,8 +110,8 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
             resolvedMismatches = resolvedUpgradeMismatches,
             versionMismatchAction = versionMismatchCheckViolationAction.get(),
             transitiveUpgradeAction = transitiveUpgradeCheckViolationAction.get(),
-            declaredHeader = "Some dependencies were declared with different versions in ${project.displayName}.",
-            resolvedHeader = "Some dependencies were upgraded transitively in ${project.displayName}.",
+            declaredHeader = "Some dependencies were declared with different versions in $displayName.",
+            resolvedHeader = "Some dependencies were upgraded transitively in $displayName.",
             tag = TAG,
             logger = logger,
         )
@@ -144,66 +127,7 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
             out.println("projectPath\t$projectPath")
             out.write()
         }
-        logger.info("[$TAG] Wrote report for ${project.path} to ${file.relativeTo(project.rootProject.projectDir)}")
-    }
-
-    private fun buildDeclaredDependenciesSnapshot(): Map<String, List<String>> {
-        val declared = mutableMapOf<String, MutableSet<String>>()
-        project.configurations
-            .matching { configuration -> DependencyDetectionHelper.isRelevantClasspath(configuration.name) }
-            .forEach { config ->
-                config.allDependencies.forEach { dependency ->
-                    val group = dependency.group
-                    val name = dependency.name
-                    val version = dependency.version
-                    if (group != null && version != null) {
-                        val key = "$group:$name"
-                        declared.getOrPut(key) { linkedSetOf() }.add(version)
-                    }
-                }
-            }
-        return declared.mapValues { (_, versions) -> versions.toList().sorted() }
-    }
-
-    private fun buildResolvedDependenciesSnapshot(): Map<String, String> {
-        val resolved = mutableMapOf<String, String>()
-        project.configurations
-            .matching { configuration ->
-                configuration.isCanBeResolved && DependencyDetectionHelper.isRelevantClasspath(configuration.name)
-            }.forEach { config ->
-                runCatching {
-                    val root = config.incoming.resolutionResult.root
-                    val visited = mutableSetOf<ComponentIdentifier>()
-                    val queue = ArrayDeque<ResolvedComponentResult>()
-                    queue += root
-                    while (queue.isNotEmpty()) {
-                        val component = queue.removeFirst()
-                        component
-                            .dependencies
-                            .filterIsInstance<ResolvedDependencyResult>()
-                            .forEach { dep ->
-                                val selected = dep.selected
-                                if (visited.add(selected.id)) {
-                                    queue += selected
-                                }
-                                val moduleId = selected.id as? ModuleComponentIdentifier ?: return@forEach
-                                val key = "${moduleId.group}:${moduleId.module}"
-                                val version = moduleId.version
-                                val current = resolved[key]
-                                if (current == null || DependencyDetectionHelper.compareVersions(
-                                        DependencyVersion(version),
-                                        DependencyVersion(current),
-                                    ) > 0
-                                ) {
-                                    resolved[key] = version
-                                }
-                            }
-                    }
-                }.onFailure { throwable ->
-                    logger.warn("[$TAG] Failed to traverse resolution graph for ${config.name}", throwable)
-                }
-            }
-        return resolved
+        logger.info("[$TAG] Wrote report for $projectPath to $file")
     }
 
     companion object {
