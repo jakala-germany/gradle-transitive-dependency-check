@@ -261,6 +261,57 @@ class TransitiveDependencyCheckFunctionalTest {
         )
     }
 
+    @Test
+    fun `succeeds when only plugin-internal tool configurations contain conflicting versions`() {
+        val projectDir = createTempDir(prefix = "transitiveDependencyCheck")
+        projectDir
+            .resolve("settings.gradle.kts")
+            .writeText("rootProject.name = \"sample\"\n")
+        projectDir
+            .resolve("build.gradle.kts")
+            .writeText(
+                """
+                plugins {
+                    id("java")
+                    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin")
+                }
+
+                repositories {
+                    mavenCentral()
+                }
+
+                // Simulates how plugins like ktlint and detekt each create their own
+                // tool classpath and add dependencies to it. The user does not declare
+                // these in implementation/api and has no control over them.
+                val ktlintTool by configurations.creating
+                val detektTool by configurations.creating
+
+                dependencies {
+                    ktlintTool("io.github.detekt.sarif4k:sarif4k:0.5.0")
+                    detektTool("io.github.detekt.sarif4k:sarif4k:0.6.0")
+                }
+                """.trimIndent(),
+            )
+
+        val result = GradleRunner
+            .create()
+            .withProjectDir(projectDir)
+            .withPluginClasspath()
+            .withArguments("checkTransitiveDependencies", "-s")
+            .build()
+
+        val output = result.output
+        assertFalse(
+            output.contains("io.github.detekt.sarif4k:sarif4k declared with multiple versions"),
+            output,
+        )
+        assertFalse(
+            output.contains("Some dependencies were declared with different versions in root project \'sample\'."),
+            output,
+        )
+        assertEquals(TaskOutcome.SUCCESS, result.task(":checkTransitiveDependencies")?.outcome)
+    }
+
     private fun createTempDir(path: Path? = null, prefix: String = ""): File {
         val dir = createTempDirectory(path, prefix).toFile()
         dir.deleteOnExit()

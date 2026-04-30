@@ -748,6 +748,82 @@ class AggregatedTransitiveDependencyCheckFunctionalTest {
         assertEquals(TaskOutcome.SUCCESS, result.task(":checkAggregatedTransitiveDependencies")?.outcome)
     }
 
+    @Test
+    fun `succeeds when only plugin-internal tool configurations contain conflicting versions across modules`() {
+        val projectDir = createTempDir(prefix = "transitiveDependencyCheck")
+        val moduleOneDir = createTempDir(path = projectDir.toPath(), prefix = "moduleOne")
+        val moduleTwoDir = createTempDir(path = projectDir.toPath(), prefix = "moduleTwo")
+        projectDir
+            .resolve("settings.gradle.kts")
+            .writeText("rootProject.name = \"sample\"\ninclude(\"${moduleOneDir.name}\", \"${moduleTwoDir.name}\")\n")
+        projectDir
+            .resolve("build.gradle.kts")
+            .writeText(
+                """
+                plugins {
+                    id("java")
+                    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin")
+                }
+                """.trimIndent(),
+            )
+        moduleOneDir
+            .resolve("build.gradle.kts")
+            .writeText(
+                """
+                plugins {
+                    id("java")
+                }
+
+                repositories {
+                    mavenCentral()
+                }
+
+                val ktlintTool by configurations.creating
+
+                dependencies {
+                    ktlintTool("io.github.detekt.sarif4k:sarif4k:0.5.0")
+                }
+                """.trimIndent(),
+            )
+        moduleTwoDir
+            .resolve("build.gradle.kts")
+            .writeText(
+                """
+                plugins {
+                    id("java")
+                }
+
+                repositories {
+                    mavenCentral()
+                }
+
+                val detektTool by configurations.creating
+
+                dependencies {
+                    detektTool("io.github.detekt.sarif4k:sarif4k:0.6.0")
+                }
+                """.trimIndent(),
+            )
+
+        val result = GradleRunner
+            .create()
+            .withProjectDir(projectDir)
+            .withPluginClasspath()
+            .withArguments("checkAggregatedTransitiveDependencies", "-s")
+            .build()
+
+        val output = result.output
+        assertFalse(
+            output.contains("io.github.detekt.sarif4k:sarif4k declared with multiple versions"),
+            output,
+        )
+        assertFalse(
+            output.contains("Some dependencies were declared with different versions across projects."),
+            output,
+        )
+        assertEquals(TaskOutcome.SUCCESS, result.task(":checkAggregatedTransitiveDependencies")?.outcome)
+    }
+
     private fun createTempDir(path: Path? = null, prefix: String = ""): File {
         val dir = createTempDirectory(path, prefix).toFile()
         dir.deleteOnExit()

@@ -169,17 +169,19 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
 
     private fun buildDeclaredDependenciesSnapshot(): Map<String, List<String>> {
         val declared = mutableMapOf<String, MutableSet<String>>()
-        project.configurations.forEach { config ->
-            config.dependencies.forEach { dependency ->
-                val group = dependency.group
-                val name = dependency.name
-                val version = dependency.version
-                if (group != null && version != null) {
-                    val key = "$group:$name"
-                    declared.getOrPut(key) { linkedSetOf() }.add(version)
+        project.configurations
+            .matching { configuration -> DependencyDetectionHelper.isRelevantClasspath(configuration.name) }
+            .forEach { config ->
+                config.allDependencies.forEach { dependency ->
+                    val group = dependency.group
+                    val name = dependency.name
+                    val version = dependency.version
+                    if (group != null && version != null) {
+                        val key = "$group:$name"
+                        declared.getOrPut(key) { linkedSetOf() }.add(version)
+                    }
                 }
             }
-        }
         return declared.mapValues { (_, versions) -> versions.toList().sorted() }
     }
 
