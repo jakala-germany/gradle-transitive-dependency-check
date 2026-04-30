@@ -12,8 +12,10 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import java.io.File
 
+@DisableCachingByDefault(because = "Aggregated check produces no output artifacts")
 abstract class CheckAggregatedTransitiveDependenciesTask : DefaultTask() {
     @get:Input
     abstract val transitiveUpgradeCheckViolationAction: Property<CheckViolationAction>
