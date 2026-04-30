@@ -4,7 +4,6 @@ import com.jakala.transitivedependencycheck.extension.CheckViolationAction
 import com.jakala.transitivedependencycheck.model.DependencyGroupName
 import com.jakala.transitivedependencycheck.model.DependencyVersion
 import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
@@ -85,38 +84,16 @@ abstract class CheckAggregatedTransitiveDependenciesTask : DefaultTask() {
             exclusions = transitiveUpgradeExclusion.get().map { it.toRegex() },
         )
 
-        val mismatchExclusionRegex = versionMismatchExclusion.get().map { it.toRegex() }
-        val upgradeExclusionRegex = transitiveUpgradeExclusion.get().map { it.toRegex() }
-
-        when {
-            declaredMismatches.isNotEmpty() -> {
-                val message = buildString {
-                    appendLine("Some dependencies were declared with different versions across projects.")
-                    declaredMismatches.forEach { appendLine(it) }
-                }.trim()
-                when (versionMismatchCheckViolationAction.get()) {
-                    CheckViolationAction.FAIL -> throw GradleException(message)
-                    CheckViolationAction.WARN -> logger.warn("[$TAG] $message")
-                    CheckViolationAction.IGNORE -> Unit
-                }
-            }
-
-            resolvedUpgradeMismatches.isNotEmpty() -> {
-                val message = buildString {
-                    appendLine("Some dependencies were upgraded transitively across projects.")
-                    resolvedUpgradeMismatches.forEach { appendLine(it) }
-                }.trim()
-                when (transitiveUpgradeCheckViolationAction.get()) {
-                    CheckViolationAction.FAIL -> throw GradleException(message)
-                    CheckViolationAction.WARN -> logger.warn("[$TAG] $message")
-                    CheckViolationAction.IGNORE -> Unit
-                }
-            }
-
-            else -> {
-                logger.info("[$TAG] All declared dependency versions look fine.")
-            }
-        }
+        ViolationReporter.report(
+            declaredMismatches = declaredMismatches,
+            resolvedMismatches = resolvedUpgradeMismatches,
+            versionMismatchAction = versionMismatchCheckViolationAction.get(),
+            transitiveUpgradeAction = transitiveUpgradeCheckViolationAction.get(),
+            declaredHeader = "Some dependencies were declared with different versions across projects.",
+            resolvedHeader = "Some dependencies were upgraded transitively across projects.",
+            tag = TAG,
+            logger = logger,
+        )
     }
 
     private fun parseReport(

@@ -4,7 +4,6 @@ import com.jakala.transitivedependencycheck.extension.CheckViolationAction
 import com.jakala.transitivedependencycheck.model.DependencyGroupName
 import com.jakala.transitivedependencycheck.model.DependencyVersion
 import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedComponentResult
@@ -123,35 +122,16 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
             exclusions = transitiveUpgradeExclusion.get().map { it.toRegex() },
         )
 
-        when {
-            declaredMismatches.isNotEmpty() -> {
-                val message = buildString {
-                    appendLine("Some dependencies were declared with different versions in ${project.displayName}.")
-                    declaredMismatches.forEach { appendLine(it) }
-                }.trim()
-                when (versionMismatchCheckViolationAction.get()) {
-                    CheckViolationAction.FAIL -> throw GradleException(message)
-                    CheckViolationAction.WARN -> logger.warn("[$TAG] $message")
-                    CheckViolationAction.IGNORE -> Unit
-                }
-            }
-
-            resolvedUpgradeMismatches.isNotEmpty() -> {
-                val message = buildString {
-                    appendLine("Some dependencies were upgraded transitively in ${project.displayName}.")
-                    resolvedUpgradeMismatches.forEach { appendLine(it) }
-                }.trim()
-                when (transitiveUpgradeCheckViolationAction.get()) {
-                    CheckViolationAction.FAIL -> throw GradleException(message)
-                    CheckViolationAction.WARN -> logger.warn("[$TAG] $message")
-                    CheckViolationAction.IGNORE -> Unit
-                }
-            }
-
-            else -> {
-                logger.info("[$TAG] All declared dependency versions look fine.")
-            }
-        }
+        ViolationReporter.report(
+            declaredMismatches = declaredMismatches,
+            resolvedMismatches = resolvedUpgradeMismatches,
+            versionMismatchAction = versionMismatchCheckViolationAction.get(),
+            transitiveUpgradeAction = transitiveUpgradeCheckViolationAction.get(),
+            declaredHeader = "Some dependencies were declared with different versions in ${project.displayName}.",
+            resolvedHeader = "Some dependencies were upgraded transitively in ${project.displayName}.",
+            tag = TAG,
+            logger = logger,
+        )
     }
 
     private fun writeReport(
@@ -220,7 +200,7 @@ abstract class CheckTransitiveDependenciesTask : DefaultTask() {
                             }
                     }
                 }.onFailure { throwable ->
-                    logger.info("[$TAG] Failed to traverse resolution graph for ${config.name}", throwable)
+                    logger.warn("[$TAG] Failed to traverse resolution graph for ${config.name}", throwable)
                 }
             }
         return resolved
