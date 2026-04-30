@@ -3,7 +3,7 @@ package com.jakala.transitivedependencycheck.extension
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 
-interface TransitiveDependecyCheckExtension {
+interface TransitiveDependencyCheckExtension {
     /**
      * Set the [CheckViolationAction] for transitive dependency upgrade check.
      * Default: [CheckViolationAction.FAIL]
@@ -29,7 +29,7 @@ interface TransitiveDependecyCheckExtension {
     val versionMismatchExclusion: SetProperty<String>
 }
 
-internal abstract class MutableTransitiveDependecyCheckExtension : TransitiveDependecyCheckExtension {
+internal abstract class MutableTransitiveDependencyCheckExtension : TransitiveDependencyCheckExtension {
     init {
         transitiveUpgradeCheckViolationAction.convention(CheckViolationAction.FAIL)
         versionMismatchCheckViolationAction.convention(CheckViolationAction.FAIL)

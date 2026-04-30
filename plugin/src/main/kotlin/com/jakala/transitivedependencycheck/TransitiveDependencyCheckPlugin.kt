@@ -1,8 +1,8 @@
 package com.jakala.transitivedependencycheck
 
 import com.jakala.transitivedependencycheck.extension.CheckViolationAction
-import com.jakala.transitivedependencycheck.extension.MutableTransitiveDependecyCheckExtension
-import com.jakala.transitivedependencycheck.extension.TransitiveDependecyCheckExtension
+import com.jakala.transitivedependencycheck.extension.MutableTransitiveDependencyCheckExtension
+import com.jakala.transitivedependencycheck.extension.TransitiveDependencyCheckExtension
 import com.jakala.transitivedependencycheck.task.CheckAggregatedTransitiveDependenciesTask
 import com.jakala.transitivedependencycheck.task.CheckTransitiveDependenciesTask
 import org.gradle.api.GradleException
@@ -18,8 +18,8 @@ class TransitiveDependencyCheckPlugin : Plugin<Project> {
             throw GradleException("Only apply this plugin to the root project. Current project: ${project.path}")
         }
 
-        val extension = project.objects.newInstance(MutableTransitiveDependecyCheckExtension::class.java)
-        project.extensions.add(TransitiveDependecyCheckExtension::class.java, "transitiveDependencyCheck", extension)
+        val extension = project.objects.newInstance(MutableTransitiveDependencyCheckExtension::class.java)
+        project.extensions.add(TransitiveDependencyCheckExtension::class.java, "transitiveDependencyCheck", extension)
 
         targetProjects.map { project ->
             project.tasks.register(
