@@ -4,9 +4,17 @@
 
 [Snapshot]: https://github.com/jakala-germany/gradle-transitive-dependency-check/compare/1.1.0...HEAD
 
+**New**
+
+- Configuration cache support: both tasks are now fully compatible with `--configuration-cache`
+- `CheckTransitiveDependenciesTask` is now `@CacheableTask`; outputs are restored from the build cache on repeat runs
+
 **Changed**
 
-- Upcoming changes go here
+- `TransitiveDependencyCheckExtension` is the corrected spelling of the public extension interface
+- Resolution graph traversal failures are now logged at `WARN` level instead of `INFO`
+- Dependency bumps: Kotlin 2.3.21, ktlint plugin 14.2.0, ktlint runtime 1.8.0,
+  JUnit 5.12.2, com.vanniktech.maven.publish 0.36.0, Gradle 9.6.1
 
 ## [1.1.0] - 2026-04-30
 
