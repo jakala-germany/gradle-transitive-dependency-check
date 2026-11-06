@@ -89,6 +89,7 @@ class TransitiveDependencyCheckPlugin : Plugin<Project> {
         val declared = mutableMapOf<String, MutableSet<String>>()
         project.configurations
             .matching { DependencyDetectionHelper.isRelevantClasspath(it.name) }
+            .toList()
             .forEach { config ->
                 config.allDependencies.forEach { dep ->
                     val g = dep.group
@@ -105,6 +106,7 @@ class TransitiveDependencyCheckPlugin : Plugin<Project> {
         val resolved = mutableMapOf<String, String>()
         project.configurations
             .matching { it.isCanBeResolved && DependencyDetectionHelper.isRelevantClasspath(it.name) }
+            .toList()
             .forEach { config ->
                 runCatching {
                     val root = config.incoming.resolutionResult.root

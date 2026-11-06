@@ -10,7 +10,11 @@
 
 **Changed**
 
-- Upcoming changes go here
+- Both snapshots now traverse a copy of the classpath configurations instead of the live
+  container. Resolving a configuration can add further configurations to the same container --
+  Kotlin Multiplatform does this while setting up its targets -- which made the traversal fail
+  with a `ConcurrentModificationException` during task input evaluation, before any version was
+  compared, so the build reported no violations and no cause
 
 ## [1.2.0] - 2026-08-14
 

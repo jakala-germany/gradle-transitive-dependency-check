@@ -312,6 +312,58 @@ class TransitiveDependencyCheckFunctionalTest {
         assertEquals(TaskOutcome.SUCCESS, result.task(":checkTransitiveDependencies")?.outcome)
     }
 
+    @Test
+    fun `reports violations when resolving a configuration registers further configurations`() {
+        val projectDir = createTempDir(prefix = "transitiveDependencyCheck")
+        projectDir
+            .resolve("settings.gradle.kts")
+            .writeText("rootProject.name = \"sample\"\n")
+        projectDir
+            .resolve("build.gradle.kts")
+            .writeText(
+                """
+                plugins {
+                    id("java")
+                    id("io.github.jakala-germany.transitive-dependency-check-gradle-plugin")
+                }
+
+                repositories {
+                    mavenCentral()
+                }
+
+                dependencies {
+                    implementation("org.apache.httpcomponents:httpclient:4.5.13")
+                    implementation("commons-codec:commons-codec:1.10")
+                }
+
+                // Kotlin Multiplatform adds configurations to the container while an existing
+                // one is resolving, which grows the container mid-traversal.
+                configurations.named("compileClasspath") {
+                    incoming.beforeResolve {
+                        (1..5).forEach { index ->
+                            val name = "lateConfiguration${'$'}index"
+                            if (configurations.findByName(name) == null) {
+                                configurations.create(name)
+                            }
+                        }
+                    }
+                }
+                """.trimIndent(),
+            )
+
+        val result = GradleRunner
+            .create()
+            .withProjectDir(projectDir)
+            .withPluginClasspath()
+            .withArguments("checkTransitiveDependencies", "-s")
+            .buildAndFail()
+
+        val output = result.output
+        assertFalse(output.contains("ConcurrentModificationException"), output)
+        assertTrue(output.contains("commons-codec:commons-codec declared with 1.10 → resolved as 1.11"), output)
+        assertEquals(TaskOutcome.FAILED, result.task(":checkTransitiveDependencies")?.outcome)
+    }
+
     private fun createTempDir(path: Path? = null, prefix: String = ""): File {
         val dir = createTempDirectory(path, prefix).toFile()
         dir.deleteOnExit()
