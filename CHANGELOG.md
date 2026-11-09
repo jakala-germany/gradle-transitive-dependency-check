@@ -2,11 +2,19 @@
 
 ## [Snapshot]
 
-[Snapshot]: https://github.com/jakala-germany/gradle-transitive-dependency-check/compare/1.2.0...HEAD
+[Snapshot]: https://github.com/jakala-germany/gradle-transitive-dependency-check/compare/1.2.1...HEAD
 
 **New**
 
 - Upcoming additions go here
+
+**Changed**
+
+- Upcoming changes go here
+
+## [1.2.1] - 2026-11-09
+
+[1.2.1]: https://github.com/jakala-germany/gradle-transitive-dependency-check/releases/tag/1.2.1
 
 **Changed**
 
